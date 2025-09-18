@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USOF Admin Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            border-bottom-color: #3498db;
+            background: #f8f9fa;
+        }
+        
+        .tab:hover {
+            background: #f8f9fa;
+        }
+        
+        .content {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 0.5rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary { background: #3498db; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        
+        .btn:hover { opacity: 0.8; }
+        
+        .status-active { 
+            color: #27ae60; 
+            font-weight: bold; 
+        }
+        
+        .status-inactive { 
+            color: #e74c3c; 
+            font-weight: bold; 
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+        
+        .search-bar {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1>🛡️ USOF Admin Panel</h1>
+                <p>Керування контентом та користувачами</p>
+            </div>
+            <button class="btn btn-danger" onclick="logout()" style="margin: 0;">🚪 Logout</button>
+        </div>
+    </div>
+
+    <div class="container" style="display: none;">
+        <!-- Статистика -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalUsers">-</div>
+                <div>Користувачів</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalPosts">-</div>
+                <div>Постів</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalComments">-</div>
+                <div>Коментарів</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalCategories">-</div>
+                <div>Категорій</div>
+            </div>
+        </div>
+
+        <!-- Вкладки -->
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('users')">👥 Користувачі</div>
+            <div class="tab" onclick="showTab('posts')">📝 Пости</div>
+            <div class="tab" onclick="showTab('comments')">💬 Коментарі</div>
+            <div class="tab" onclick="showTab('categories')">📂 Категорії</div>
+        </div>
+
+        <!-- Контент -->
+        <div class="content">
+            <!-- Користувачі -->
+            <div id="users-content">
+                <h2>Користувачі</h2>
+                <input type="text" class="search-bar" placeholder="Пошук користувачів..." onkeyup="filterTable(this.value, 'usersTable')">
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Логін</th>
+                            <th>Ім'я</th>
+                            <th>Email</th>
+                            <th>Роль</th>
+                            <th>Рейтинг</th>
+                            <th>Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Пости -->
+            <div id="posts-content" class="hidden">
+                <h2>Пости</h2>
+                <input type="text" class="search-bar" placeholder="Пошук постів..." onkeyup="filterTable(this.value, 'postsTable')">
+                <table id="postsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Заголовок</th>
+                            <th>Автор</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Лайки</th>
+                            <th>Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Коментарі -->
+            <div id="comments-content" class="hidden">
+                <h2>Коментарі</h2>
+                <input type="text" class="search-bar" placeholder="Пошук коментарів..." onkeyup="filterTable(this.value, 'commentsTable')">
+                <table id="commentsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Контент</th>
+                            <th>Автор</th>
+                            <th>Пост</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Категорії -->
+            <div id="categories-content" class="hidden">
+                <h2>Категорії</h2>
+                <button class="btn btn-success" onclick="createCategory()">+ Нова категорія</button>
+                <table id="categoriesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Назва</th>
+                            <th>Опис</th>
+                            <th>Постів</th>
+                            <th>Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentToken = localStorage.getItem('adminToken');
+
+        // Функція авторизації
+        async function loginAdmin() {
+            const login = prompt('Admin login:');
+            const password = prompt('Admin password:');
+            
+            if (!login || !password) {
+                alert('Login and password are required!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.token && data.user.role === 'admin') {
+                    currentToken = data.token;
+                    localStorage.setItem('adminToken', currentToken);
+                    document.querySelector('.container').style.display = 'block';
+                    loadData();
+                } else {
+                    alert('Access denied! Only admins can access this panel.');
+                    setTimeout(() => loginAdmin(), 1000);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed. Please try again.');
+                setTimeout(() => loginAdmin(), 1000);
+            }
+        }
+
+        // Перевірка авторизації при завантаженні
+        function checkAuth() {
+            if (!currentToken) {
+                document.querySelector('.container').style.display = 'none';
+                loginAdmin();
+            } else {
+                // Перевірити чи токен ще дійсний
+                fetch('/admin/api/stats', {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                })
+                .then(res => {
+                    if (res.ok) {
+                        loadData();
+                    } else {
+                        // Токен недійсний, видалити його і запросити новий логін
+                        localStorage.removeItem('adminToken');
+                        currentToken = null;
+                        document.querySelector('.container').style.display = 'none';
+                        loginAdmin();
+                    }
+                })
+                .catch(() => {
+                    localStorage.removeItem('adminToken');
+                    currentToken = null;
+                    loginAdmin();
+                });
+            }
+        }
+
+        // Запуск перевірки при завантаженні сторінки
+        checkAuth();
+
+        function showTab(tabName) {
+            // Приховати всі вкладки
+            document.querySelectorAll('[id$="-content"]').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            
+            // Показати активну
+            document.getElementById(tabName + '-content').classList.remove('hidden');
+            event.target.classList.add('active');
+        }
+
+        async function loadData() {
+            await Promise.all([
+                loadUsers(),
+                loadPosts(), 
+                loadComments(),
+                loadCategories(),
+                loadStats()
+            ]);
+        }
+
+        async function loadStats() {
+            try {
+                const [users, posts, comments, categories] = await Promise.all([
+                    fetch(`${API_BASE}/users`, { headers: { 'Authorization': `Bearer ${currentToken}` } }).then(r => r.json()),
+                    fetch(`${API_BASE}/posts`).then(r => r.json()),
+                    fetch(`${API_BASE}/comments`).then(r => r.json()),
+                    fetch(`${API_BASE}/categories`).then(r => r.json())
+                ]);
+                
+                document.getElementById('totalUsers').textContent = users.length || 0;
+                document.getElementById('totalPosts').textContent = posts.length || 0;
+                document.getElementById('totalComments').textContent = comments.length || 0;
+                document.getElementById('totalCategories').textContent = categories.length || 0;
+            } catch (err) {
+                console.error('Stats loading error:', err);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/users`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                const users = await response.json();
+                
+                const tbody = document.querySelector('#usersTable tbody');
+                tbody.innerHTML = users.map(user => `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.login}</td>
+                        <td>${user.full_name}</td>
+                        <td>${user.email}</td>
+                        <td><span class="badge">${user.role}</span></td>
+                        <td>${user.rating || 0}</td>
+                        <td>
+                            <button class="btn btn-warning" onclick="editUser(${user.id})">Редагувати</button>
+                            <button class="btn btn-danger" onclick="deleteUser(${user.id})">Видалити</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading users:', err);
+            }
+        }
+
+        function filterTable(value, tableId) {
+            const table = document.getElementById(tableId);
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(value.toLowerCase()) ? '' : 'none';
+            });
+        }
+
+        function deleteUser(id) {
+            if (confirm('Видалити користувача?')) {
+                fetch(`${API_BASE}/users/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                })
+                .then(() => loadUsers())
+                .catch(err => alert('Error: ' + err.message));
+            }
+        }
+
+        async function loadPosts() {
+            try {
+                const response = await fetch('/admin/api/posts', {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                const posts = await response.json();
+                
+                const tbody = document.querySelector('#postsTable tbody');
+                tbody.innerHTML = posts.map(post => `
+                    <tr>
+                        <td>${post.id}</td>
+                        <td>${post.title.length > 50 ? post.title.substring(0, 50) + '...' : post.title}</td>
+                        <td>${post.author_login}</td>
+                        <td><span class="status-${post.status}">${post.status}</span></td>
+                        <td>${new Date(post.publish_date).toLocaleDateString()}</td>
+                        <td>${post.likes_count || 0}/${post.dislikes_count || 0}</td>
+                        <td>
+                            <button class="btn btn-warning" onclick="togglePostStatus(${post.id}, '${post.status === 'active' ? 'inactive' : 'active'}')">
+                                ${post.status === 'active' ? 'Приховати' : 'Активувати'}
+                            </button>
+                            <button class="btn btn-danger" onclick="deletePost(${post.id})">Видалити</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading posts:', err);
+            }
+        }
+        
+        async function loadComments() {
+            try {
+                const response = await fetch('/admin/api/comments', {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                const comments = await response.json();
+                
+                const tbody = document.querySelector('#commentsTable tbody');
+                tbody.innerHTML = comments.map(comment => `
+                    <tr>
+                        <td>${comment.id}</td>
+                        <td>${comment.content.length > 100 ? comment.content.substring(0, 100) + '...' : comment.content}</td>
+                        <td>${comment.author_login}</td>
+                        <td>${comment.post_title ? comment.post_title.substring(0, 30) + '...' : 'N/A'}</td>
+                        <td><span class="status-${comment.status}">${comment.status}</span></td>
+                        <td>${new Date(comment.publish_date).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-warning" onclick="toggleCommentStatus(${comment.id}, '${comment.status === 'active' ? 'inactive' : 'active'}')">
+                                ${comment.status === 'active' ? 'Приховати' : 'Активувати'}
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteComment(${comment.id})">Видалити</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading comments:', err);
+            }
+        }
+        
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/categories`);
+                const categories = await response.json();
+                
+                const tbody = document.querySelector('#categoriesTable tbody');
+                tbody.innerHTML = categories.map(category => `
+                    <tr>
+                        <td>${category.id}</td>
+                        <td>${category.title}</td>
+                        <td>${category.description || 'N/A'}</td>
+                        <td>${category.posts_count || 0}</td>
+                        <td>
+                            <button class="btn btn-warning" onclick="editCategory(${category.id})">Редагувати</button>
+                            <button class="btn btn-danger" onclick="deleteCategory(${category.id})">Видалити</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading categories:', err);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/admin/api/stats', {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                const stats = await response.json();
+                
+                document.getElementById('totalUsers').textContent = stats.users;
+                document.getElementById('totalPosts').textContent = stats.posts;
+                document.getElementById('totalComments').textContent = stats.comments;
+                document.getElementById('totalCategories').textContent = stats.categories;
+            } catch (err) {
+                console.error('Stats loading error:', err);
+            }
+        }
+
+        // Функції управління
+        async function togglePostStatus(id, newStatus) {
+            try {
+                await fetch(`/admin/api/posts/${id}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                loadPosts();
+            } catch (err) {
+                alert('Error updating post status: ' + err.message);
+            }
+        }
+
+        async function toggleCommentStatus(id, newStatus) {
+            try {
+                await fetch(`/admin/api/comments/${id}/status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                loadComments();
+            } catch (err) {
+                alert('Error updating comment status: ' + err.message);
+            }
+        }
+
+        function createCategory() {
+            const title = prompt('Назва категорії:');
+            const description = prompt('Опис категорії:');
+            
+            if (title) {
+                fetch(`${API_BASE}/categories`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ title, description })
+                })
+                .then(() => loadCategories())
+                .catch(err => alert('Error: ' + err.message));
+            }
+        }
+
+        function deleteCategory(id) {
+            if (confirm('Видалити категорію?')) {
+                fetch(`${API_BASE}/categories/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                })
+                .then(() => loadCategories())
+                .catch(err => alert('Error: ' + err.message));
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            currentToken = null;
+            document.querySelector('.container').style.display = 'none';
+            alert('Logged out successfully');
+            loginAdmin();
+        }
+    </script>
+</body>
+</html>
